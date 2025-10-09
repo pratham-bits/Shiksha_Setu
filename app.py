@@ -56,11 +56,11 @@ db_manager = DatabaseManager()
 nlp_processor = NLPProcessor()
 
 # Email configuration from environment variables
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
+# Email configuration from environment variables with defaults
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
-
 # Check if email is configured
 EMAIL_CONFIGURED = all([EMAIL_USER, EMAIL_PASSWORD])
 if EMAIL_CONFIGURED:
