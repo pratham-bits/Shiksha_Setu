@@ -15,6 +15,8 @@ import re
 from dotenv import load_dotenv
 import sys
 import traceback
+import threading
+import time
 
 # Add better error handling
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -29,8 +31,8 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = handle_exception
 
-
 load_dotenv()  # Load environment variables from .env file
+
 # Debug: Check if all imports work
 try:
     print("🔧 Testing imports...")
@@ -48,6 +50,7 @@ except Exception as e:
     print(f"❌ Import error: {e}")
     import traceback
     traceback.print_exc()
+
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
@@ -56,15 +59,16 @@ db_manager = DatabaseManager()
 nlp_processor = NLPProcessor()
 
 # Email configuration from environment variables
-# Email configuration from environment variables with defaults
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+
 # Check if email is configured
 EMAIL_CONFIGURED = all([EMAIL_USER, EMAIL_PASSWORD])
 if EMAIL_CONFIGURED:
     print("✅ Email service configured")
+    print(f"📧 Using: {EMAIL_HOST}:{EMAIL_PORT}")
 else:
     print("⚠️  Email service not configured - using console fallback")
 
@@ -92,8 +96,19 @@ def get_auth_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def _display_verification_code_console(email, verification_code):
+    """Display verification code in console"""
+    print("\n" + "="*70)
+    print("🎯 VERIFICATION CODE")
+    print("="*70)
+    print(f"📧 For: {email}")
+    print(f"🔐 Code: {verification_code}")
+    print("="*70)
+    print("💡 Copy this code and paste it in the verification page")
+    print("="*70 + "\n")
+
 def send_verification_email_real(email, verification_code):
-    """Actually send verification email via SMTP"""
+    """Production-ready email sending with comprehensive error handling"""
     try:
         print(f"🔧 Attempting to send email to: {email}")
         print(f"🔧 Using SMTP: {EMAIL_HOST}:{EMAIL_PORT}")
@@ -111,7 +126,7 @@ def send_verification_email_real(email, verification_code):
                 body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
                 .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
                 .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-                .code {{ font-size: 42px; font-weight: bold; color: #667eea; text-align: center; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; letter-spacing: 5px; }}
+                .code {{ font-size: 32px; font-weight: bold; color: #667eea; text-align: center; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; letter-spacing: 3px; }}
                 .footer {{ margin-top: 30px; padding: 20px; background-color: #f8f9fa; text-align: center; border-radius: 0 0 10px 10px; }}
                 .info {{ background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }}
             </style>
@@ -132,7 +147,7 @@ def send_verification_email_real(email, verification_code):
                     
                     <div class="info">
                         <p><strong>📝 Instructions:</strong></p>
-                        <p>1. Go back to the ShikshaSetu verification page</p>
+                        <p>1. Return to the ShikshaSetu verification page</p>
                         <p>2. Enter the code above</p>
                         <p>3. Complete your registration</p>
                     </div>
@@ -161,7 +176,7 @@ def send_verification_email_real(email, verification_code):
         Verification Code: {verification_code}
         
         Instructions:
-        1. Go back to the ShikshaSetu verification page
+        1. Return to the ShikshaSetu verification page
         2. Enter the code above
         3. Complete your registration
         
@@ -171,8 +186,6 @@ def send_verification_email_real(email, verification_code):
         
         Best regards,
         The ShikshaSetu Team
-        
-        This is an automated message, please do not reply to this email.
         """
         
         # Create message
@@ -187,9 +200,9 @@ def send_verification_email_real(email, verification_code):
         msg.attach(part1)
         msg.attach(part2)
         
-        # Send email
+        # Send email with timeout
         print("📧 Connecting to SMTP server...")
-        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
+        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=10)  # 10 second timeout
         server.ehlo()
         server.starttls()
         server.ehlo()
@@ -202,38 +215,64 @@ def send_verification_email_real(email, verification_code):
         
         return True
         
+    except smtplib.SMTPAuthenticationError:
+        print("❌ SMTP Authentication Failed - Check email credentials")
+        return False
+    except smtplib.SMTPConnectError:
+        print("❌ SMTP Connection Failed - Check host and port")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ SMTP Error: {e}")
+        return False
     except Exception as e:
-        print(f"❌ Email sending failed: {str(e)}")
-        print(f"❌ Error type: {type(e).__name__}")
+        print(f"❌ Unexpected email error: {str(e)}")
         return False
 
-def send_verification_email(email, verification_code):
-    """Try real email first, fall back to console if failed"""
+def send_verification_email_async(email, verification_code):
+    """Send email in background to avoid timeouts"""
+    def email_worker():
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                print(f"🔄 Email attempt {attempt + 1} for {email}")
+                if send_verification_email_real(email, verification_code):
+                    print(f"✅ Email sent successfully to {email}")
+                    return
+                else:
+                    print(f"⚠️ Email attempt {attempt + 1} failed for {email}")
+            except Exception as e:
+                print(f"❌ Email attempt {attempt + 1} error: {e}")
+            
+            if attempt < max_retries - 1:
+                time.sleep(2)  # Wait before retry
+        
+        # If all retries fail, use console fallback
+        print(f"❌ All email attempts failed for {email}, using console fallback")
+        _display_verification_code_console(email, verification_code)
     
-    # First try real email
-    print("🔄 Attempting to send real email...")
-    if send_verification_email_real(email, verification_code):
+    # Start email in background thread
+    if EMAIL_CONFIGURED:
+        email_thread = threading.Thread(target=email_worker)
+        email_thread.daemon = True
+        email_thread.start()
+        print(f"🔄 Background email process started for {email}")
         return True
-    
-    # If real email fails, fall back to console
-    print("🔄 Falling back to console display...")
-    print("\n" + "="*70)
-    print("🎯 VERIFICATION CODE (Email failed - check console)")
-    print("="*70)
-    print(f"📧 Intended for: {email}")
-    print(f"🔐 Verification Code: {verification_code}")
-    print("="*70)
-    print("💡 Copy this code and paste it in the verification page")
-    print("="*70 + "\n")
-    
-    # Still show a flash message
-    flash('Email service temporarily unavailable. Please check the console for your verification code.', 'warning')
-    return True
+    else:
+        print("🔄 Email not configured, using console fallback")
+        _display_verification_code_console(email, verification_code)
+        return True
 
 @app.route('/test-email')
 def test_email():
     """Test email sending functionality"""
-    test_email = "your-actual-email@gmail.com"  # Change to your actual email
+    if not EMAIL_CONFIGURED:
+        return '''
+        <h1>❌ Email Not Configured</h1>
+        <p>Please set EMAIL_USER and EMAIL_PASSWORD environment variables.</p>
+        <a href="/">Go Home</a>
+        '''
+    
+    test_email = EMAIL_USER  # Send test to yourself
     test_code = "987654"
     
     print("🧪 Testing email configuration...")
@@ -247,9 +286,9 @@ def test_email():
     result = send_verification_email_real(test_email, test_code)
     
     if result:
-        return '''
+        return f'''
         <h1>✅ Email Test SUCCESSFUL!</h1>
-        <p>Check your email inbox for the test message.</p>
+        <p>Check your email inbox ({test_email}) for the test message.</p>
         <p>Test code sent: <strong>987654</strong></p>
         <a href="/register">Go to Registration</a>
         '''
@@ -345,14 +384,18 @@ def register():
             conn.close()
             return render_template('register.html', username=username, email=email)
         
-        # Send verification email (uses real email with fallback to console)
-        if send_verification_email(email, verification_code):
+        # Send verification email using async method
+        if send_verification_email_async(email, verification_code):
             session['pending_user_id'] = user_id
             session['pending_email'] = email
             session['pending_username'] = username
             session['verification_code'] = verification_code
             
-            flash('Verification code sent! Please check your email.', 'success')
+            if EMAIL_CONFIGURED:
+                flash('Verification code sent! Please check your email.', 'success')
+            else:
+                flash('Verification code generated! Please check the console.', 'info')
+            
             print(f"Redirecting to verification page for user {user_id}")
             return redirect(url_for('verify_email'))
         else:
