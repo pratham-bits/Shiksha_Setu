@@ -208,9 +208,16 @@ class DatabaseManager:
         cursor.execute("SELECT COUNT(*) FROM documents")
         count = cursor.fetchone()[0]
         
+        print(f"📊 Database currently has {count} documents")
+        
         if count == 0:
             print("📥 Inserting comprehensive higher education documents...")
             self._insert_comprehensive_documents(cursor)
+            
+            # Verify insertion
+            cursor.execute("SELECT COUNT(*) FROM documents")
+            new_count = cursor.fetchone()[0]
+            print(f"✅ Now database has {new_count} documents")
         else:
             print(f"📊 Database contains {count} documents")
     
@@ -219,9 +226,16 @@ class DatabaseManager:
         cursor.execute("SELECT COUNT(*) FROM documents")
         count = cursor.fetchone()[0]
         
+        print(f"📊 Database currently has {count} documents")
+        
         if count == 0:
             print("📥 Inserting comprehensive higher education documents...")
             self._insert_comprehensive_documents_postgresql(cursor)
+            
+            # Verify insertion
+            cursor.execute("SELECT COUNT(*) FROM documents")
+            new_count = cursor.fetchone()[0]
+            print(f"✅ Now database has {new_count} documents")
         else:
             print(f"📊 Database contains {count} documents")
     
@@ -245,94 +259,374 @@ class DatabaseManager:
             print(f"Migration error: {e}")
     
     def _insert_comprehensive_documents(self, cursor):
-        """Insert documents for SQLite - same as your original"""
+        """Insert documents for SQLite"""
         comprehensive_documents = [
-            # Your existing document data here (same as before)
-            # ... [ALL YOUR EXISTING DOCUMENT DATA REMAINS EXACTLY THE SAME]
+            # Policy Documents
+            {
+                'title': 'National Education Policy 2020 - Complete Document',
+                'content': 'The National Education Policy 2020 is a comprehensive framework for elementary to higher education in India. It focuses on multidisciplinary education, flexibility in learning, internationalization of education, and promoting Indian languages and culture.',
+                'document_type': 'Policy Document',
+                'category': 'National Policy',
+                'sub_category': 'Higher Education Reform',
+                'department': 'Ministry of Education',
+                'created_date': '2020-07-29',
+                'last_updated': '2020-07-29',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'NEP 2020,education policy,India,higher education,school education,multidisciplinary,internationalization,academic bank of credits,multiple entry exit,regulation framework,curriculum reform,assessment reform',
+                'document_url': 'https://www.education.gov.in/sites/upload_files/mhrd/files/NEP_Final_English_0.pdf',
+                'search_priority': 5,
+                'full_text_content': 'National Education Policy 2020 NEP comprehensive framework elementary to higher education India multidisciplinary education flexibility learning internationalization promoting Indian languages culture academic bank of credits multiple entry exit regulatory framework higher education commission'
+            },
+            {
+                'title': 'National Policy on Skill Development and Entrepreneurship 2015',
+                'content': 'Policy framework to rapidly scale up skill development efforts in India and link them to employment opportunities.',
+                'document_type': 'Policy Document',
+                'category': 'Skill Development',
+                'sub_category': 'Entrepreneurship',
+                'department': 'Ministry of Skill Development',
+                'created_date': '2015-07-15',
+                'last_updated': '2015-07-15',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'skill development,entrepreneurship,vocational training,employment,NSDC,skill India',
+                'document_url': 'https://www.skilldevelopment.gov.in/national-policy.html',
+                'search_priority': 4,
+                'full_text_content': 'National Policy Skill Development Entrepreneurship framework scale up skill development India link employment opportunities vocational training NSDC Skill India'
+            },
+            # Regulations
+            {
+                'title': 'University Grants Commission Regulations 2023',
+                'content': 'Latest UGC regulations governing higher education institutions, including accreditation standards, faculty qualifications, and institutional governance.',
+                'document_type': 'Regulation',
+                'category': 'Higher Education',
+                'sub_category': 'Accreditation Standards',
+                'department': 'University Grants Commission',
+                'created_date': '2023-01-15',
+                'last_updated': '2023-01-15',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'UGC,regulations,accreditation,quality standards,faculty qualifications,governance,higher education institutions,universities,colleges,compliance,approval process',
+                'document_url': 'https://www.ugc.gov.in/regulations/',
+                'search_priority': 5,
+                'full_text_content': 'University Grants Commission UGC regulations governing higher education institutions accreditation standards faculty qualifications institutional governance quality assurance compliance requirements universities colleges approval process'
+            },
+            {
+                'title': 'AICTE Approval Process Handbook 2023-24',
+                'content': 'Comprehensive handbook detailing the approval process for technical institutions and programs in India.',
+                'document_type': 'Regulation',
+                'category': 'Technical Education',
+                'sub_category': 'Approval Process',
+                'department': 'AICTE',
+                'created_date': '2023-03-01',
+                'last_updated': '2023-03-01',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'AICTE,technical education,engineering,management,pharmacy,architecture,approval process,quality standards,inspection,norms,program approval',
+                'document_url': 'https://www.aicte-india.org/approval-process',
+                'search_priority': 5,
+                'full_text_content': 'AICTE Approval Process Handbook technical institutions programs India engineering management pharmacy architecture quality standards inspection norms program approval'
+            },
+            # Schemes & Programs
+            {
+                'title': 'Scholarship Schemes for Higher Education 2023-24',
+                'content': 'Comprehensive guide to various scholarship schemes available for students in higher education including merit-based and means-based scholarships.',
+                'document_type': 'Scheme',
+                'category': 'Student Financial Aid',
+                'sub_category': 'Scholarships',
+                'department': 'Ministry of Education',
+                'created_date': '2023-04-01',
+                'last_updated': '2023-04-01',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'scholarship,financial aid,merit-based,means-based,SC ST OBC,minority scholarships,post-matric,National Scholarship Portal,student aid,fee reimbursement',
+                'document_url': 'https://scholarships.gov.in/',
+                'search_priority': 5,
+                'full_text_content': 'Scholarship schemes higher education students merit-based means-based SC ST OBC minority post-matric National Scholarship Portal financial aid support eligibility criteria application process fee reimbursement'
+            },
+            # Guidelines
+            {
+                'title': 'Online Education Guidelines and Standards 2023',
+                'content': 'Comprehensive guidelines for online and distance learning programs in higher education institutions.',
+                'document_type': 'Guidelines',
+                'category': 'Digital Education',
+                'sub_category': 'Online Learning',
+                'department': 'University Grants Commission',
+                'created_date': '2023-02-15',
+                'last_updated': '2023-02-15',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'online education,distance learning,digital education,MOOCs,SWAYAM,learning management system,quality standards,virtual learning,blended learning',
+                'document_url': 'https://www.ugc.gov.in/online-guidelines',
+                'search_priority': 4,
+                'full_text_content': 'Online education guidelines standards distance learning programs higher education institutions MOOCs SWAYAM learning management system quality assurance digital infrastructure virtual learning blended learning'
+            },
+            # Frameworks & Standards
+            {
+                'title': 'National Institutional Ranking Framework Methodology 2023',
+                'content': 'Detailed methodology for NIRF ranking of higher education institutions including parameters for teaching, research, and graduation outcomes.',
+                'document_type': 'Framework',
+                'category': 'Institutional Ranking',
+                'sub_category': 'Ranking Methodology',
+                'department': 'Ministry of Education',
+                'created_date': '2023-02-10',
+                'last_updated': '2023-02-10',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'NIRF,ranking,higher education institutions,methodology,parameters,teaching quality,research,graduation outcomes,academic reputation,institutional ranking',
+                'document_url': 'https://www.nirfindia.org/methodology',
+                'search_priority': 4,
+                'full_text_content': 'National Institutional Ranking Framework NIRF methodology ranking higher education institutions parameters teaching learning resources research professional practice graduation outcomes outreach inclusivity perception'
+            },
+            # Reports & Statistics
+            {
+                'title': 'All India Survey on Higher Education 2021-22',
+                'content': 'Comprehensive survey providing key performance indicators on higher education in India including enrollment, institutions, and teachers.',
+                'document_type': 'Survey Report',
+                'category': 'Education Statistics',
+                'sub_category': 'Higher Education Data',
+                'department': 'Ministry of Education',
+                'created_date': '2023-01-10',
+                'last_updated': '2023-01-10',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'AISHE,higher education,enrollment,universities,colleges,education statistics,performance indicators,institutional data',
+                'document_url': 'https://www.education.gov.in/sites/upload_files/mhrd/files/statistics-new/aishe_2021-22.pdf',
+                'search_priority': 4,
+                'full_text_content': 'All India Survey Higher Education AISHE key performance indicators enrollment institutions teachers universities colleges education statistics institutional data'
+            }
         ]
         
-        for doc in comprehensive_documents:
-            cursor.execute('''
-                INSERT INTO documents (
-                    title, content, document_type, category, sub_category, department,
-                    created_date, last_updated, status, jurisdiction, keywords,
-                    document_url, search_priority, full_text_content
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                doc['title'], doc['content'], doc['document_type'], doc['category'],
-                doc['sub_category'], doc['department'], doc['created_date'],
-                doc['last_updated'], doc.get('status', 'Active'), doc.get('jurisdiction', 'National'),
-                doc['keywords'], doc['document_url'], doc['search_priority'],
-                doc['full_text_content']
-            ))
-            
-            document_id = cursor.lastrowid
-            
-            # Insert keywords
-            keywords = doc['keywords'].split(',')
-            for keyword in keywords:
-                clean_keyword = keyword.strip()
-                if clean_keyword:
-                    cursor.execute('''
-                        INSERT INTO document_keywords (document_id, keyword, relevance_score)
-                        VALUES (?, ?, ?)
-                    ''', (document_id, clean_keyword, 1))
-            
-            # Insert into search index
-            search_text = f"{doc['title']} {doc['content']} {doc['full_text_content']} {doc['keywords']}"
-            cursor.execute('''
-                INSERT INTO search_index (document_id, search_text)
-                VALUES (?, ?)
-            ''', (document_id, search_text))
+        print(f"📥 Inserting {len(comprehensive_documents)} comprehensive higher education documents...")
         
-        print(f"✅ Inserted {len(comprehensive_documents)} comprehensive higher education documents")
+        success_count = 0
+        for i, doc in enumerate(comprehensive_documents):
+            try:
+                cursor.execute('''
+                    INSERT INTO documents (
+                        title, content, document_type, category, sub_category, department,
+                        created_date, last_updated, status, jurisdiction, keywords,
+                        document_url, search_priority, full_text_content
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    doc['title'], doc['content'], doc['document_type'], doc['category'],
+                    doc['sub_category'], doc['department'], doc['created_date'],
+                    doc['last_updated'], doc.get('status', 'Active'), doc.get('jurisdiction', 'National'),
+                    doc['keywords'], doc['document_url'], doc['search_priority'],
+                    doc['full_text_content']
+                ))
+                
+                document_id = cursor.lastrowid
+                success_count += 1
+                
+                # Insert keywords
+                keywords = doc['keywords'].split(',')
+                for keyword in keywords:
+                    clean_keyword = keyword.strip()
+                    if clean_keyword:
+                        cursor.execute('''
+                            INSERT INTO document_keywords (document_id, keyword, relevance_score)
+                            VALUES (?, ?, ?)
+                        ''', (document_id, clean_keyword, 1))
+                
+                # Insert into search index
+                search_text = f"{doc['title']} {doc['content']} {doc['full_text_content']} {doc['keywords']}"
+                cursor.execute('''
+                    INSERT INTO search_index (document_id, search_text)
+                    VALUES (?, ?)
+                ''', (document_id, search_text))
+                
+                print(f"✅ Inserted document {i+1}: {doc['title'][:30]}...")
+                
+            except Exception as e:
+                print(f"❌ Failed to insert document {i+1}: {e}")
+                continue
+        
+        print(f"🎯 Successfully inserted {success_count}/{len(comprehensive_documents)} documents")
     
     def _insert_comprehensive_documents_postgresql(self, cursor):
         """Insert documents for PostgreSQL"""
         comprehensive_documents = [
-            # Your existing document data here (same as before)
-            # ... [ALL YOUR EXISTING DOCUMENT DATA REMAINS EXACTLY THE SAME]
+            # Same document data as above
+            {
+                'title': 'National Education Policy 2020 - Complete Document',
+                'content': 'The National Education Policy 2020 is a comprehensive framework for elementary to higher education in India. It focuses on multidisciplinary education, flexibility in learning, internationalization of education, and promoting Indian languages and culture.',
+                'document_type': 'Policy Document',
+                'category': 'National Policy',
+                'sub_category': 'Higher Education Reform',
+                'department': 'Ministry of Education',
+                'created_date': '2020-07-29',
+                'last_updated': '2020-07-29',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'NEP 2020,education policy,India,higher education,school education,multidisciplinary,internationalization,academic bank of credits,multiple entry exit,regulation framework,curriculum reform,assessment reform',
+                'document_url': 'https://www.education.gov.in/sites/upload_files/mhrd/files/NEP_Final_English_0.pdf',
+                'search_priority': 5,
+                'full_text_content': 'National Education Policy 2020 NEP comprehensive framework elementary to higher education India multidisciplinary education flexibility learning internationalization promoting Indian languages culture academic bank of credits multiple entry exit regulatory framework higher education commission'
+            },
+            {
+                'title': 'National Policy on Skill Development and Entrepreneurship 2015',
+                'content': 'Policy framework to rapidly scale up skill development efforts in India and link them to employment opportunities.',
+                'document_type': 'Policy Document',
+                'category': 'Skill Development',
+                'sub_category': 'Entrepreneurship',
+                'department': 'Ministry of Skill Development',
+                'created_date': '2015-07-15',
+                'last_updated': '2015-07-15',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'skill development,entrepreneurship,vocational training,employment,NSDC,skill India',
+                'document_url': 'https://www.skilldevelopment.gov.in/national-policy.html',
+                'search_priority': 4,
+                'full_text_content': 'National Policy Skill Development Entrepreneurship framework scale up skill development India link employment opportunities vocational training NSDC Skill India'
+            },
+            {
+                'title': 'University Grants Commission Regulations 2023',
+                'content': 'Latest UGC regulations governing higher education institutions, including accreditation standards, faculty qualifications, and institutional governance.',
+                'document_type': 'Regulation',
+                'category': 'Higher Education',
+                'sub_category': 'Accreditation Standards',
+                'department': 'University Grants Commission',
+                'created_date': '2023-01-15',
+                'last_updated': '2023-01-15',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'UGC,regulations,accreditation,quality standards,faculty qualifications,governance,higher education institutions,universities,colleges,compliance,approval process',
+                'document_url': 'https://www.ugc.gov.in/regulations/',
+                'search_priority': 5,
+                'full_text_content': 'University Grants Commission UGC regulations governing higher education institutions accreditation standards faculty qualifications institutional governance quality assurance compliance requirements universities colleges approval process'
+            },
+            {
+                'title': 'AICTE Approval Process Handbook 2023-24',
+                'content': 'Comprehensive handbook detailing the approval process for technical institutions and programs in India.',
+                'document_type': 'Regulation',
+                'category': 'Technical Education',
+                'sub_category': 'Approval Process',
+                'department': 'AICTE',
+                'created_date': '2023-03-01',
+                'last_updated': '2023-03-01',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'AICTE,technical education,engineering,management,pharmacy,architecture,approval process,quality standards,inspection,norms,program approval',
+                'document_url': 'https://www.aicte-india.org/approval-process',
+                'search_priority': 5,
+                'full_text_content': 'AICTE Approval Process Handbook technical institutions programs India engineering management pharmacy architecture quality standards inspection norms program approval'
+            },
+            {
+                'title': 'Scholarship Schemes for Higher Education 2023-24',
+                'content': 'Comprehensive guide to various scholarship schemes available for students in higher education including merit-based and means-based scholarships.',
+                'document_type': 'Scheme',
+                'category': 'Student Financial Aid',
+                'sub_category': 'Scholarships',
+                'department': 'Ministry of Education',
+                'created_date': '2023-04-01',
+                'last_updated': '2023-04-01',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'scholarship,financial aid,merit-based,means-based,SC ST OBC,minority scholarships,post-matric,National Scholarship Portal,student aid,fee reimbursement',
+                'document_url': 'https://scholarships.gov.in/',
+                'search_priority': 5,
+                'full_text_content': 'Scholarship schemes higher education students merit-based means-based SC ST OBC minority post-matric National Scholarship Portal financial aid support eligibility criteria application process fee reimbursement'
+            },
+            {
+                'title': 'Online Education Guidelines and Standards 2023',
+                'content': 'Comprehensive guidelines for online and distance learning programs in higher education institutions.',
+                'document_type': 'Guidelines',
+                'category': 'Digital Education',
+                'sub_category': 'Online Learning',
+                'department': 'University Grants Commission',
+                'created_date': '2023-02-15',
+                'last_updated': '2023-02-15',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'online education,distance learning,digital education,MOOCs,SWAYAM,learning management system,quality standards,virtual learning,blended learning',
+                'document_url': 'https://www.ugc.gov.in/online-guidelines',
+                'search_priority': 4,
+                'full_text_content': 'Online education guidelines standards distance learning programs higher education institutions MOOCs SWAYAM learning management system quality assurance digital infrastructure virtual learning blended learning'
+            },
+            {
+                'title': 'National Institutional Ranking Framework Methodology 2023',
+                'content': 'Detailed methodology for NIRF ranking of higher education institutions including parameters for teaching, research, and graduation outcomes.',
+                'document_type': 'Framework',
+                'category': 'Institutional Ranking',
+                'sub_category': 'Ranking Methodology',
+                'department': 'Ministry of Education',
+                'created_date': '2023-02-10',
+                'last_updated': '2023-02-10',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'NIRF,ranking,higher education institutions,methodology,parameters,teaching quality,research,graduation outcomes,academic reputation,institutional ranking',
+                'document_url': 'https://www.nirfindia.org/methodology',
+                'search_priority': 4,
+                'full_text_content': 'National Institutional Ranking Framework NIRF methodology ranking higher education institutions parameters teaching learning resources research professional practice graduation outcomes outreach inclusivity perception'
+            },
+            {
+                'title': 'All India Survey on Higher Education 2021-22',
+                'content': 'Comprehensive survey providing key performance indicators on higher education in India including enrollment, institutions, and teachers.',
+                'document_type': 'Survey Report',
+                'category': 'Education Statistics',
+                'sub_category': 'Higher Education Data',
+                'department': 'Ministry of Education',
+                'created_date': '2023-01-10',
+                'last_updated': '2023-01-10',
+                'status': 'Active',
+                'jurisdiction': 'National',
+                'keywords': 'AISHE,higher education,enrollment,universities,colleges,education statistics,performance indicators,institutional data',
+                'document_url': 'https://www.education.gov.in/sites/upload_files/mhrd/files/statistics-new/aishe_2021-22.pdf',
+                'search_priority': 4,
+                'full_text_content': 'All India Survey Higher Education AISHE key performance indicators enrollment institutions teachers universities colleges education statistics institutional data'
+            }
         ]
         
-        for doc in comprehensive_documents:
-            cursor.execute('''
-                INSERT INTO documents (
-                    title, content, document_type, category, sub_category, department,
-                    created_date, last_updated, status, jurisdiction, keywords,
-                    document_url, search_priority, full_text_content
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id
-            ''', (
-                doc['title'], doc['content'], doc['document_type'], doc['category'],
-                doc['sub_category'], doc['department'], doc['created_date'],
-                doc['last_updated'], doc.get('status', 'Active'), doc.get('jurisdiction', 'National'),
-                doc['keywords'], doc['document_url'], doc['search_priority'],
-                doc['full_text_content']
-            ))
-            
-            document_id = cursor.fetchone()[0]
-            
-            # Insert keywords
-            keywords = doc['keywords'].split(',')
-            for keyword in keywords:
-                clean_keyword = keyword.strip()
-                if clean_keyword:
-                    cursor.execute('''
-                        INSERT INTO document_keywords (document_id, keyword, relevance_score)
-                        VALUES (%s, %s, %s)
-                    ''', (document_id, clean_keyword, 1))
-            
-            # Insert into search index
-            search_text = f"{doc['title']} {doc['content']} {doc['full_text_content']} {doc['keywords']}"
-            cursor.execute('''
-                INSERT INTO search_index (document_id, search_text)
-                VALUES (%s, %s)
-            ''', (document_id, search_text))
+        print(f"📥 Inserting {len(comprehensive_documents)} comprehensive higher education documents...")
         
-        print(f"✅ Inserted {len(comprehensive_documents)} comprehensive higher education documents")
+        success_count = 0
+        for i, doc in enumerate(comprehensive_documents):
+            try:
+                cursor.execute('''
+                    INSERT INTO documents (
+                        title, content, document_type, category, sub_category, department,
+                        created_date, last_updated, status, jurisdiction, keywords,
+                        document_url, search_priority, full_text_content
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                ''', (
+                    doc['title'], doc['content'], doc['document_type'], doc['category'],
+                    doc['sub_category'], doc['department'], doc['created_date'],
+                    doc['last_updated'], doc.get('status', 'Active'), doc.get('jurisdiction', 'National'),
+                    doc['keywords'], doc['document_url'], doc['search_priority'],
+                    doc['full_text_content']
+                ))
+                
+                document_id = cursor.fetchone()[0]
+                success_count += 1
+                
+                # Insert keywords
+                keywords = doc['keywords'].split(',')
+                for keyword in keywords:
+                    clean_keyword = keyword.strip()
+                    if clean_keyword:
+                        cursor.execute('''
+                            INSERT INTO document_keywords (document_id, keyword, relevance_score)
+                            VALUES (%s, %s, %s)
+                        ''', (document_id, clean_keyword, 1))
+                
+                # Insert into search index
+                search_text = f"{doc['title']} {doc['content']} {doc['full_text_content']} {doc['keywords']}"
+                cursor.execute('''
+                    INSERT INTO search_index (document_id, search_text)
+                    VALUES (%s, %s)
+                ''', (document_id, search_text))
+                
+                print(f"✅ Inserted document {i+1}: {doc['title'][:30]}...")
+                
+            except Exception as e:
+                print(f"❌ Failed to insert document {i+1}: {e}")
+                continue
+        
+        print(f"🎯 Successfully inserted {success_count}/{len(comprehensive_documents)} documents")
 
-    # ALL YOUR EXISTING METHODS REMAIN EXACTLY THE SAME - JUST UPDATE THE QUERIES SLIGHTLY
-    
+    # ALL YOUR EXISTING METHODS REMAIN EXACTLY THE SAME
     def search_documents(self, query=None, doc_type=None, category=None, department=None, use_advanced=True):
         """Enhanced search documents with multiple criteria and better ranking"""
         try:
@@ -444,7 +738,6 @@ class DatabaseManager:
         results = self.execute_query(base_query, params, fetch=True)
         return results
 
-    # Keep all your other methods exactly the same - just update the internal queries
     def get_all_documents(self):
         """Get all documents for display"""
         try:
