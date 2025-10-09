@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section py-5" style="background: linear-gradient(135deg, #ffffff, #f8f9fa);">
+    <div class="container">
+        <div class="row align-items-center min-vh-80">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4" style="color: #1a5276;">
+                    Welcome to <span class="text-warning" style="color: #e67e22 !important;">ShikshaSetu</span>
+                </h1>
+                <p class="lead mb-4" style="font-weight: 500; color: #2c3e50; line-height: 1.7;">
+                    AI-Powered Intelligent Search Platform for Education Regulations, Policies, 
+                    and Schemes. Streamlining decision-making for the Department of Higher Education.
+                </p>
+                <div class="feature-list mb-4">
+                    <div class="d-flex align-items-center mb-3 p-3 rounded" style="background-color: #e8f4fd; border-left: 4px solid #3498db;">
+                        <i class="fas fa-search me-3 fa-lg" style="color: #3498db;"></i>
+                        <span class="fw-medium" style="color: #2c3e50;">Semantic Search using Advanced NLP</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-3 p-3 rounded" style="background-color: #e8f6f3; border-left: 4px solid #27ae60;">
+                        <i class="fas fa-brain me-3 fa-lg" style="color: #27ae60;"></i>
+                        <span class="fw-medium" style="color: #2c3e50;">Machine Learning Powered Insights</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-3 p-3 rounded" style="background-color: #fef9e7; border-left: 4px solid #f39c12;">
+                        <i class="fas fa-bolt me-3 fa-lg" style="color: #f39c12;"></i>
+                        <span class="fw-medium" style="color: #2c3e50;">Quick and Accurate Document Retrieval</span>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Button Based on Authentication Status -->
+                {% if session.user_id %}
+                    <!-- Show Search button when user is logged in -->
+                    <a href="{{ url_for('search_page') }}" class="btn btn-warning btn-lg px-5 py-3 fw-bold shadow" style="background: linear-gradient(135deg, #e67e22, #d35400); border: none; color: white;">
+                        <i class="fas fa-search me-2"></i>
+                        Start Searching
+                    </a>
+                {% else %}
+                    <!-- Show Get Started button when user is not logged in -->
+                    <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg px-5 py-3 fw-bold shadow" style="background: linear-gradient(135deg, #e67e22, #d35400); border: none; color: white;">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Get Started
+                    </a>
+                {% endif %}
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="hero-image">
+                    <div class="ai-badge rounded-pill px-4 py-2 d-inline-block fw-bold shadow" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white;">
+                        <i class="fas fa-robot me-2"></i>
+                        AI-Powered Search
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5" style="background-color: #ffffff;">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col">
+                <h2 class="section-title fw-bold" style="color: #1a5276;">Key Features</h2>
+                <p class="fs-5" style="color: #7f8c8d;">Transforming how education authorities access and analyze regulatory documents</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow" style="border-radius: 15px; border-top: 4px solid #3498db;">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: linear-gradient(135deg, #3498db, #2980b9);">
+                            <i class="fas fa-search fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold" style="color: #1a5276;">Intelligent Search</h5>
+                        <p class="card-text" style="color: #7f8c8d;">
+                            Find relevant documents using natural language queries and semantic understanding.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow" style="border-radius: 15px; border-top: 4px solid #27ae60;">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: linear-gradient(135deg, #27ae60, #229954);">
+                            <i class="fas fa-lightbulb fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold" style="color: #1a5276;">Smart Insights</h5>
+                        <p class="card-text" style="color: #7f8c8d;">
+                            Get AI-generated insights and recommendations from complex regulatory documents.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card card h-100 border-0 shadow" style="border-radius: 15px; border-top: 4px solid #e67e22;">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: linear-gradient(135deg, #e67e22, #d35400);">
+                            <i class="fas fa-bolt fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold" style="color: #1a5276;">Fast Retrieval</h5>
+                        <p class="card-text" style="color: #7f8c8d;">
+                            Access critical information quickly with our optimized search algorithms.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Call to Action - Updated with Dynamic Content -->
+        <div class="row mt-5">
+            <div class="col text-center">
+                <div class="card border-0 text-dark shadow" style="background: linear-gradient(135deg, #e8f4fd, #d6eaf8); border-radius: 15px; border: 2px solid #3498db;">
+                    <div class="card-body py-5">
+                        {% if session.user_id %}
+                            <!-- Content for logged-in users -->
+                            <h3 class="card-title mb-3 fw-bold" style="color: #1a5276;">Ready to Explore Documents?</h3>
+                            <p class="card-text mb-4 fs-5" style="color: #2c3e50;">Start searching through our comprehensive database of education documents</p>
+                            <a href="{{ url_for('search_page') }}" class="btn btn-warning btn-lg px-5 fw-bold shadow" style="background: linear-gradient(135deg, #e67e22, #d35400); border: none; color: white;">
+                                <i class="fas fa-search me-2"></i>
+                                Start Searching Now
+                            </a>
+                        {% else %}
+                            <!-- Content for non-logged-in users -->
+                            <h3 class="card-title mb-3 fw-bold" style="color: #1a5276;">Ready to Transform Document Search?</h3>
+                            <p class="card-text mb-4 fs-5" style="color: #2c3e50;">Create your account and experience the power of AI-driven education document retrieval</p>
+                            <div class="d-flex gap-3 justify-content-center">
+                                <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg px-5 fw-bold shadow" style="background: linear-gradient(135deg, #e67e22, #d35400); border: none; color: white;">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Register Now
+                                </a>
+                                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg px-5 fw-bold">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Login
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Additional Info Section -->
+<section class="info-section py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+                <h2 class="fw-bold mb-4" style="color: #1a5276;">How ShikshaSetu Works</h2>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="step-card p-3">
+                            <div class="step-number text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold" style="width: 50px; height: 50px; background: linear-gradient(135deg, #3498db, #2980b9);">1</div>
+                            <h5 class="fw-bold" style="color: #1a5276;">
+                                {% if session.user_id %}
+                                    Enter Your Query
+                                {% else %}
+                                    Create Account
+                                {% endif %}
+                            </h5>
+                            <p style="color: #7f8c8d;">
+                                {% if session.user_id %}
+                                    Type your question in natural language
+                                {% else %}
+                                    Register with your email and verify your account
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="step-card p-3">
+                            <div class="step-number text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold" style="width: 50px; height: 50px; background: linear-gradient(135deg, #27ae60, #229954);">2</div>
+                            <h5 class="fw-bold" style="color: #1a5276;">
+                                {% if session.user_id %}
+                                    AI Processing
+                                {% else %}
+                                    Secure Login
+                                {% endif %}
+                            </h5>
+                            <p style="color: #7f8c8d;">
+                                {% if session.user_id %}
+                                    Our system understands context and intent
+                                {% else %}
+                                    Login securely with your credentials
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="step-card p-3">
+                            <div class="step-number text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold" style="width: 50px; height: 50px; background: linear-gradient(135deg, #e67e22, #d35400);">3</div>
+                            <h5 class="fw-bold" style="color: #1a5276;">
+                                {% if session.user_id %}
+                                    Get Results
+                                {% else %}
+                                    Start Searching
+                                {% endif %}
+                            </h5>
+                            <p style="color: #7f8c8d;">
+                                {% if session.user_id %}
+                                    Receive accurate, relevant information
+                                {% else %}
+                                    Access powerful AI-powered search features
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="benefits-section py-5" style="background-color: #ffffff;">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col">
+                <h2 class="fw-bold mb-4" style="color: #1a5276;">Why Choose ShikshaSetu?</h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="benefit-item d-flex align-items-start">
+                    <div class="benefit-icon me-4">
+                        <i class="fas fa-shield-alt fa-2x" style="color: #3498db;"></i>
+                    </div>
+                    <div>
+                        <h5 style="color: #1a5276;">Secure & Private</h5>
+                        <p style="color: #7f8c8d;">Your data and searches are protected with enterprise-grade security measures.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="benefit-item d-flex align-items-start">
+                    <div class="benefit-icon me-4">
+                        <i class="fas fa-bolt fa-2x" style="color: #e67e22;"></i>
+                    </div>
+                    <div>
+                        <h5 style="color: #1a5276;">Lightning Fast</h5>
+                        <p style="color: #7f8c8d;">Get instant results with our optimized search algorithms and AI processing.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="benefit-item d-flex align-items-start">
+                    <div class="benefit-icon me-4">
+                        <i class="fas fa-graduation-cap fa-2x" style="color: #27ae60;"></i>
+                    </div>
+                    <div>
+                        <h5 style="color: #1a5276;">Education-Focused</h5>
+                        <p style="color: #7f8c8d;">Specifically designed for education professionals and policymakers.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="benefit-item d-flex align-items-start">
+                    <div class="benefit-icon me-4">
+                        <i class="fas fa-infinity fa-2x" style="color: #9b59b6;"></i>
+                    </div>
+                    <div>
+                        <h5 style="color: #1a5276;">Always Evolving</h5>
+                        <p style="color: #7f8c8d;">Our AI models continuously learn and improve to provide better results.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero-section {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .feature-card {
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .step-card {
+        transition: all 0.3s ease;
+    }
+    
+    .step-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .benefit-item {
+        padding: 1.5rem;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .benefit-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+    
+    /* Ensure all text is clearly visible */
+    body {
+        background-color: #f8f9fa;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: #1a5276 !important;
+    }
+    
+    p, span {
+        color: #2c3e50 !important;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .hero-section .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+        
+        .d-flex.gap-3 {
+            flex-direction: column;
+            gap: 1rem !important;
+        }
+        
+        .d-flex.gap-3 .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

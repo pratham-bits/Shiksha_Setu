@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Your Account</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+            outline: none;
+        }
+        
+        .input-group input:read-only {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #eee;
+            margin: 25px 0;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .login-link a {
+            color: #6a11cb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .status-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .status-message.success {
+            background-color: #e6f7e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .status-message.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        
+        .verification-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .verification-info h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .verification-info ul {
+            padding-left: 20px;
+        }
+        
+        .verification-info li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>Create Your Account</h1>
+                <p>Complete your registration to get started</p>
+            </div>
+            
+            <div class="form-container">
+                <div id="statusMessage" class="status-message"></div>
+                
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" value="pratham" readonly>
+                </div>
+                
+                <div class="input-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" value="homeinpipcho2010@gmail.com" readonly>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <button id="verifyBtn" class="btn">CONTINUE TO VERIFICATION</button>
+                
+                <div class="login-link">
+                    Already have an account? <a href="#">Login here</a>
+                </div>
+                
+                <div class="verification-info">
+                    <h3>What happens next?</h3>
+                    <ul>
+                        <li>We'll send a verification code to your email</li>
+                        <li>Enter the code on the next screen</li>
+                        <li>Complete your profile setup</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const verifyBtn = document.getElementById('verifyBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            verifyBtn.addEventListener('click', function() {
+                // Show loading state
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Sending Verification Code...';
+                
+                // Clear any previous status messages
+                statusMessage.style.display = 'none';
+                statusMessage.className = 'status-message';
+                
+                // Simulate API call to send verification code
+                setTimeout(function() {
+                    // In a real application, this would be an actual API call
+                    // For demonstration, we'll simulate a successful response
+                    
+                    // Show success message
+                    statusMessage.textContent = 'Verification code sent to your email!';
+                    statusMessage.className = 'status-message success';
+                    statusMessage.style.display = 'block';
+                    
+                    // Reset button
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'CONTINUE TO VERIFICATION';
+                    
+                    // In a real application, you would redirect to the verification page
+                    console.log('Verification code sent to homeinpipcho2010@gmail.com');
+                    
+                    // For demonstration, we'll simulate a redirect after 2 seconds
+                    setTimeout(function() {
+                        // This would be the actual redirect in a real application
+                        // window.location.href = '/verify-code';
+                        alert('In a real application, you would be redirected to the verification page.');
+                    }, 2000);
+                    
+                }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>

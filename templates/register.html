@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">Create Your Account</h2>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Status Message Container -->
+                    <div id="statusMessage" class="alert d-none"></div>
+
+                    <form method="POST" id="registerForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                value="{{ username if username else '' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                value="{{ email if email else '' }}" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2" id="submitBtn">
+                            Continue to Verification
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                    </div>
+
+                    <!-- Verification Info -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="mb-2">What happens next?</h6>
+                        <ul class="small mb-0">
+                            <li>We'll send a verification code to your email</li>
+                            <li>Enter the code on the next screen</li>
+                            <li>Complete your profile setup</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const registerForm = document.getElementById('registerForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Check if form has pre-filled values (indicating previous errors)
+        function checkForPreviousErrors() {
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            
+            // If either field has data, it means the form was re-displayed after an error
+            if (username || email) {
+                showStatus('Please check your information and try again', 'error');
+            }
+        }
+
+        // Run the check when page loads
+        checkForPreviousErrors();
+
+        registerForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Get form data
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            // Basic validation
+            if (!username || !email) {
+                showStatus('Please fill in all fields', 'error');
+                return;
+            }
+
+            if (username.length < 3) {
+                showStatus('Username must be at least 3 characters long', 'error');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showStatus('Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending Verification Code...';
+
+            // Show status message
+            showStatus('Sending verification code to your email...', 'info');
+
+            // Submit the form after a short delay to show loading state
+            setTimeout(() => {
+                registerForm.submit();
+            }, 1000);
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'}`;
+            statusMessage.classList.remove('d-none');
+
+            // Auto-hide success/info messages after 5 seconds
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusMessage.classList.add('d-none');
+                }, 5000);
+            }
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+    });
+</script>
+
+<style>
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .bg-light {
+        background-color: #f8f9fa !important;
+    }
+
+    .alert {
+        border: none;
+        border-radius: 8px;
+    }
+
+    .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}

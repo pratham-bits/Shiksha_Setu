@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.title }} - ShikshaSetu{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Document Header -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h1 class="display-6 fw-bold text-primary">{{ document.title }}</h1>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge bg-secondary">{{ document.document_type }}</span>
+                                <span class="badge bg-primary">{{ document.category }}</span>
+                                <span class="badge bg-info">{{ document.department }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('search_page') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Search
+                        </a>
+                    </div>
+                    
+                    <div class="row text-muted">
+                        <div class="col-md-6">
+                            <i class="fas fa-calendar me-2"></i>Created: {{ document.created_date }}
+                        </div>
+                        <div class="col-md-6">
+                            <i class="fas fa-building me-2"></i>Department: {{ document.department }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Content -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Document Summary</h3>
+                    <p class="card-text lead">{{ document.content }}</p>
+                    
+                    {% if document.keywords %}
+                    <div class="mt-4">
+                        <h5><i class="fas fa-hashtag me-2"></i>Keywords</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for keyword in document.keywords.split(',') %}
+                            <span class="badge bg-light text-dark border">{{ keyword.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Document Actions</h5>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% if document.document_url %}
+                        <a href="{{ document.document_url }}" target="_blank" class="btn btn-primary">
+                            <i class="fas fa-external-link-alt me-2"></i>View Full Document
+                        </a>
+                        {% endif %}
+                        
+                        <button onclick="downloadDocumentSummary()" class="btn btn-success">
+                            <i class="fas fa-download me-2"></i>Download Summary
+                        </button>
+                        
+                        <button onclick="printDocument()" class="btn btn-outline-secondary">
+                            <i class="fas fa-print me-2"></i>Print Summary
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Documents -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Related Documents</h5>
+                    <div class="row">
+                        <!-- This would be populated with similar documents -->
+                        <div class="col-12">
+                            <p class="text-muted">Documents with similar content and categories will appear here.</p>
+                            <a href="{{ url_for('search_page') }}?query={{ document.category }}" class="btn btn-outline-primary btn-sm">
+                                Search similar documents
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function downloadDocumentSummary() {
+    // Create a simple text summary for download
+    const summary = `
+SHIKSHA SETU - DOCUMENT SUMMARY
+
+Title: {{ document.title }}
+Type: {{ document.document_type }}
+Category: {{ document.category }}
+Department: {{ document.department }}
+Date: {{ document.created_date }}
+
+SUMMARY:
+{{ document.content }}
+
+KEYWORDS:
+{{ document.keywords }}
+
+Retrieved from ShikshaSetu AI Search Platform
+    `.trim();
+
+    const blob = new Blob([summary], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '{{ document.title }} - Summary.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function printDocument() {
+    window.print();
+}
+</script>
+
+<style>
+@media print {
+    .navbar, .btn, footer {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}

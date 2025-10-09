@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Search - ShikshaSetu{% endblock %}
+
+{% block content %}
+<div class="container-fluid bg-light min-vh-100 py-4">
+    <div class="container">
+        <!-- Search Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="text-center mb-3">
+                    <i class="fas fa-search me-2 text-primary"></i>
+                    AI-Powered Document Search
+                </h2>
+                <p class="text-center text-muted">
+                    Search through regulations, policies, schemes, and guidelines using natural language
+                </p>
+            </div>
+        </div>
+
+        <!-- Search Form - MAKE SURE THIS HAS id="searchForm" -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <form id="searchForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="query" class="form-label">
+                                        <i class="fas fa-keyboard me-2"></i>Search Query
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="query" 
+                                           placeholder="Enter your question or keywords...">
+                                    <div class="form-text">
+                                        Try natural language like "policies for online education" or "funding schemes"
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="documentType" class="form-label">
+                                        <i class="fas fa-file-alt me-2"></i>Document Type
+                                    </label>
+                                    <select class="form-select" id="documentType">
+                                        <option value="">All Types</option>
+                                        <option value="Policy">Policy</option>
+                                        <option value="Regulation">Regulation</option>
+                                        <option value="Scheme">Scheme</option>
+                                        <option value="Guideline">Guideline</option>
+                                        <option value="Framework">Framework</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="category" class="form-label">
+                                        <i class="fas fa-tags me-2"></i>Category
+                                    </label>
+                                    <select class="form-select" id="category">
+                                        <option value="">All Categories</option>
+                                        <option value="Higher Education">Higher Education</option>
+                                        <option value="Online Education">Online Education</option>
+                                        <option value="Funding">Funding</option>
+                                        <option value="Academic Framework">Academic Framework</option>
+                                        <option value="Institutional Planning">Institutional Planning</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-4">
+                                <div class="col text-center">
+                                    <button type="submit" class="btn btn-primary btn-lg px-5" id="searchButton">
+                                        <i class="fas fa-search me-2"></i>
+                                        Search Documents
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-10">
+                <div id="loading" class="text-center d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Searching through documents...</p>
+                </div>
+                
+                <div id="resultsSection" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>
+                            <i class="fas fa-list me-2"></i>
+                            Search Results
+                        </h4>
+                        <span id="resultsCount" class="badge bg-primary"></span>
+                    </div>
+                    <div id="resultsContainer"></div>
+                </div>
+
+                <div id="noResults" class="text-center d-none">
+                    <div class="card border-0">
+                        <div class="card-body py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No documents found</h5>
+                            <p class="text-muted">Try different keywords or filters</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load the external JavaScript file -->
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+{% endblock %}

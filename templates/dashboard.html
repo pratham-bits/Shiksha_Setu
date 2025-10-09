@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ShikshaSetu{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Welcome Card -->
+            <div class="card border-0 shadow-lg mb-5">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-graduation-cap fa-4x text-primary mb-3"></i>
+                        <h1 class="display-5 fw-bold text-primary">Welcome to ShikshaSetu</h1>
+                        <p class="lead text-muted">Hello, {{ session.username.title() }}! Ready to find educational documents?</p>
+                    </div>
+                    
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                        <a href="{{ url_for('search_page') }}" class="btn btn-primary btn-lg px-5">
+                            <i class="fas fa-search me-2"></i>Search Documents
+                        </a>
+                        <a href="{{ url_for('about') }}" class="btn btn-outline-secondary btn-lg px-5">
+                            <i class="fas fa-info-circle me-2"></i>Learn More
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>Quick Tips
+                    </h5>
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-comment text-info mb-2"></i>
+                            <h6>Use Natural Language</h6>
+                            <small class="text-muted">Search like you're asking a question</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-filter text-success mb-2"></i>
+                            <h6>Filter Results</h6>
+                            <small class="text-muted">Use categories to narrow down search</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-download text-primary mb-2"></i>
+                            <h6>Download Summaries</h6>
+                            <small class="text-muted">Get quick overviews of documents</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
