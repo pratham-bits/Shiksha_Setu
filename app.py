@@ -13,11 +13,41 @@ from email.mime.multipart import MIMEMultipart
 import os
 import re
 from dotenv import load_dotenv
+import sys
+import traceback
 
+# Add better error handling
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    print("UNHANDLED EXCEPTION:", file=sys.stderr)
+    print("Type:", exc_type, file=sys.stderr)
+    print("Value:", exc_value, file=sys.stderr)
+    print("Traceback:", file=sys.stderr)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+
+sys.excepthook = handle_exception
 
 
 load_dotenv()  # Load environment variables from .env file
-
+# Debug: Check if all imports work
+try:
+    print("🔧 Testing imports...")
+    from nlp_processor import NLPProcessor
+    print("✅ NLPProcessor imported successfully")
+    
+    from database import DatabaseManager
+    print("✅ DatabaseManager imported successfully")
+    
+    from models import init_auth_db
+    print("✅ Auth models imported successfully")
+    
+    print("✅ All imports successful!")
+except Exception as e:
+    print(f"❌ Import error: {e}")
+    import traceback
+    traceback.print_exc()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
