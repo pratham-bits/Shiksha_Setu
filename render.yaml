@@ -3,8 +3,14 @@ services:
     name: shiksha-setu
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: |
+      python app.py
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.9.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shiksha_setu_db
+          property: connectionString

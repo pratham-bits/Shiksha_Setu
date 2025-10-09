@@ -1,6 +1,7 @@
 import sqlite3
 from flask import Flask, render_template, request, jsonify, send_from_directory, session, redirect, url_for, flash
 from database import DatabaseManager
+from models import create_user, get_user_by_username_or_email, verify_user_email, hash_password, init_auth_db, get_auth_db_connection
 from nlp_processor import NLPProcessor
 import traceback
 import hashlib
@@ -12,6 +13,8 @@ from email.mime.multipart import MIMEMultipart
 import os
 import re
 from dotenv import load_dotenv
+
+
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -27,6 +30,13 @@ EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
 EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+
+# Check if email is configured
+EMAIL_CONFIGURED = all([EMAIL_USER, EMAIL_PASSWORD])
+if EMAIL_CONFIGURED:
+    print("✅ Email service configured")
+else:
+    print("⚠️  Email service not configured - using console fallback")
 
 def init_auth_db():
     """Initialize authentication database"""
@@ -696,6 +706,16 @@ def serve_static(filename):
     return send_from_directory('static', filename)
 
 if __name__ == '__main__':
-    print("Starting ShikshaSetu Application...")
-    print("Access the application at: http://localhost:5000")
-    app.run(debug=True, port=5000)
+    # Get port from environment variable (Render sets this)
+    port = int(os.environ.get('PORT', 5000))
+    
+    print("🚀 Starting ShikshaSetu Application...")
+    print(f"📍 Access the application at: http://localhost:{port}")
+    print("🔧 Running in production mode")
+    if EMAIL_CONFIGURED:
+        print("📧 Email service: ENABLED")
+    else:
+        print("📧 Email service: DISABLED (using console fallback)")
+    
+    # Run in production mode
+    app.run(host='0.0.0.0', port=port, debug=False)
