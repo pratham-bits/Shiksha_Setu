@@ -17,6 +17,7 @@ import sys
 import traceback
 import threading
 import time
+import requests  # Add this for SendGrid API
 
 # Add better error handling
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -63,11 +64,19 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
-# Check if email is configured
-EMAIL_CONFIGURED = all([EMAIL_USER, EMAIL_PASSWORD])
-if EMAIL_CONFIGURED:
-    print("✅ Email service configured")
+# Check which email service to use
+IS_PRODUCTION = os.getenv('FLASK_ENV') == 'production' or os.getenv('RENDER', False)
+USE_SENDGRID = IS_PRODUCTION and SENDGRID_API_KEY
+USE_SMTP = not IS_PRODUCTION and all([EMAIL_USER, EMAIL_PASSWORD])
+
+# Email configuration status
+if USE_SENDGRID:
+    print("✅ Using SendGrid for email (Production)")
+    print(f"📧 SendGrid API Key: {'*' * len(SENDGRID_API_KEY) if SENDGRID_API_KEY else 'NOT SET'}")
+elif USE_SMTP:
+    print("✅ Using SMTP for email (Local Development)")
     print(f"📧 Using: {EMAIL_HOST}:{EMAIL_PORT}")
 else:
     print("⚠️  Email service not configured - using console fallback")
@@ -107,10 +116,99 @@ def _display_verification_code_console(email, verification_code):
     print("💡 Copy this code and paste it in the verification page")
     print("="*70 + "\n")
 
-def send_verification_email_real(email, verification_code):
-    """Production-ready email sending with comprehensive error handling"""
+def send_verification_email_sendgrid(email, verification_code):
+    """Send email using SendGrid API (for production)"""
     try:
-        print(f"🔧 Attempting to send email to: {email}")
+        print(f"🔧 Using SendGrid to send email to: {email}")
+        
+        url = "https://api.sendgrid.com/v3/mail/send"
+        
+        headers = {
+            "Authorization": f"Bearer {SENDGRID_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        email_data = {
+            "personalizations": [
+                {
+                    "to": [{"email": email}],
+                    "subject": "ShikshaSetu - Verify Your Email Address"
+                }
+            ],
+            "from": {
+                "email": "shikshasetu70@gmail.com",
+                "name": "Shiksha Setu"
+            },
+            "content": [
+                {
+                    "type": "text/html",
+                    "value": f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                            .code {{ font-size: 32px; font-weight: bold; color: #667eea; text-align: center; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; letter-spacing: 3px; }}
+                            .footer {{ margin-top: 30px; padding: 20px; background-color: #f8f9fa; text-align: center; border-radius: 0 0 10px 10px; }}
+                            .info {{ background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>🎓 ShikshaSetu</h1>
+                                <p>AI-Powered Education Document Search</p>
+                            </div>
+                            
+                            <div class="content">
+                                <h2>Verify Your Email Address</h2>
+                                <p>Hello,</p>
+                                <p>Thank you for registering with ShikshaSetu. Please use the verification code below to complete your registration:</p>
+                                
+                                <div class="code">{verification_code}</div>
+                                
+                                <div class="info">
+                                    <p><strong>📝 Instructions:</strong></p>
+                                    <p>1. Return to the ShikshaSetu verification page</p>
+                                    <p>2. Enter the code above</p>
+                                    <p>3. Complete your registration</p>
+                                </div>
+                                
+                                <p><strong>⏰ This code will expire in 24 hours.</strong></p>
+                                <p>If you didn't create an account with ShikshaSetu, please ignore this email.</p>
+                            </div>
+                            
+                            <div class="footer">
+                                <p>Best regards,<br><strong>The ShikshaSetu Team</strong></p>
+                                <p style="font-size: 12px; color: #666;">This is an automated message, please do not reply to this email.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                }
+            ]
+        }
+        
+        response = requests.post(url, json=email_data, headers=headers)
+        
+        if response.status_code == 202:
+            print(f"✅ SendGrid email sent successfully to {email}")
+            return True
+        else:
+            print(f"❌ SendGrid API error: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ SendGrid request failed: {str(e)}")
+        return False
+
+def send_verification_email_smtp(email, verification_code):
+    """Send email using SMTP (for local development)"""
+    try:
+        print(f"🔧 Using SMTP to send email to: {email}")
         print(f"🔧 Using SMTP: {EMAIL_HOST}:{EMAIL_PORT}")
         print(f"🔧 From: {EMAIL_USER}")
         
@@ -211,7 +309,7 @@ def send_verification_email_real(email, verification_code):
         print("📧 Sending email...")
         server.send_message(msg)
         server.quit()
-        print("✅ Email sent successfully!")
+        print("✅ SMTP email sent successfully!")
         
         return True
         
@@ -225,21 +323,32 @@ def send_verification_email_real(email, verification_code):
         print(f"❌ SMTP Error: {e}")
         return False
     except Exception as e:
-        print(f"❌ Unexpected email error: {str(e)}")
+        print(f"❌ Unexpected SMTP error: {str(e)}")
         return False
 
 def send_verification_email_async(email, verification_code):
     """Send email in background to avoid timeouts"""
     def email_worker():
         max_retries = 2
+        
         for attempt in range(max_retries):
             try:
                 print(f"🔄 Email attempt {attempt + 1} for {email}")
-                if send_verification_email_real(email, verification_code):
+                
+                # Choose email service based on environment
+                if USE_SENDGRID:
+                    success = send_verification_email_sendgrid(email, verification_code)
+                elif USE_SMTP:
+                    success = send_verification_email_smtp(email, verification_code)
+                else:
+                    success = False
+                
+                if success:
                     print(f"✅ Email sent successfully to {email}")
                     return
                 else:
                     print(f"⚠️ Email attempt {attempt + 1} failed for {email}")
+                    
             except Exception as e:
                 print(f"❌ Email attempt {attempt + 1} error: {e}")
             
@@ -250,8 +359,8 @@ def send_verification_email_async(email, verification_code):
         print(f"❌ All email attempts failed for {email}, using console fallback")
         _display_verification_code_console(email, verification_code)
     
-    # Start email in background thread
-    if EMAIL_CONFIGURED:
+    # Start email in background thread if email service is configured
+    if USE_SENDGRID or USE_SMTP:
         email_thread = threading.Thread(target=email_worker)
         email_thread.daemon = True
         email_thread.start()
@@ -265,37 +374,54 @@ def send_verification_email_async(email, verification_code):
 @app.route('/test-email')
 def test_email():
     """Test email sending functionality"""
-    if not EMAIL_CONFIGURED:
+    if not (USE_SENDGRID or USE_SMTP):
         return '''
         <h1>❌ Email Not Configured</h1>
-        <p>Please set EMAIL_USER and EMAIL_PASSWORD environment variables.</p>
+        <p>Please set email environment variables.</p>
+        <p><strong>For Local Development:</strong> EMAIL_USER and EMAIL_PASSWORD</p>
+        <p><strong>For Production:</strong> SENDGRID_API_KEY</p>
         <a href="/">Go Home</a>
         '''
     
-    test_email = EMAIL_USER  # Send test to yourself
+    test_email = EMAIL_USER or "test@example.com"  # Send test to yourself or test address
     test_code = "987654"
     
     print("🧪 Testing email configuration...")
-    print(f"📧 EMAIL_HOST: {EMAIL_HOST}")
-    print(f"📧 EMAIL_PORT: {EMAIL_PORT}")
-    print(f"📧 EMAIL_USER: {EMAIL_USER}")
-    print(f"📧 EMAIL_PASSWORD: {'*' * len(EMAIL_PASSWORD) if EMAIL_PASSWORD else 'NOT SET'}")
+    print(f"📧 Environment: {'PRODUCTION' if IS_PRODUCTION else 'DEVELOPMENT'}")
+    
+    if USE_SENDGRID:
+        print(f"📧 Using: SendGrid")
+        print(f"📧 SENDGRID_API_KEY: {'*' * len(SENDGRID_API_KEY) if SENDGRID_API_KEY else 'NOT SET'}")
+    elif USE_SMTP:
+        print(f"📧 Using: SMTP")
+        print(f"📧 EMAIL_HOST: {EMAIL_HOST}")
+        print(f"📧 EMAIL_PORT: {EMAIL_PORT}")
+        print(f"📧 EMAIL_USER: {EMAIL_USER}")
+        print(f"📧 EMAIL_PASSWORD: {'*' * len(EMAIL_PASSWORD) if EMAIL_PASSWORD else 'NOT SET'}")
     
     # Test the actual email sending
     print("🔄 Attempting to send test email...")
-    result = send_verification_email_real(test_email, test_code)
+    
+    if USE_SENDGRID:
+        result = send_verification_email_sendgrid(test_email, test_code)
+    elif USE_SMTP:
+        result = send_verification_email_smtp(test_email, test_code)
+    else:
+        result = False
     
     if result:
         return f'''
         <h1>✅ Email Test SUCCESSFUL!</h1>
         <p>Check your email inbox ({test_email}) for the test message.</p>
         <p>Test code sent: <strong>987654</strong></p>
+        <p><strong>Service Used:</strong> {'SendGrid' if USE_SENDGRID else 'SMTP'}</p>
         <a href="/register">Go to Registration</a>
         '''
     else:
-        return '''
+        return f'''
         <h1>❌ Email Test FAILED</h1>
         <p>Check the Flask console for error details.</p>
+        <p><strong>Service Used:</strong> {'SendGrid' if USE_SENDGRID else 'SMTP'}</p>
         <a href="/">Go Home</a>
         '''
 
@@ -391,7 +517,7 @@ def register():
             session['pending_username'] = username
             session['verification_code'] = verification_code
             
-            if EMAIL_CONFIGURED:
+            if USE_SENDGRID or USE_SMTP:
                 flash('Verification code sent! Please check your email.', 'success')
             else:
                 flash('Verification code generated! Please check the console.', 'info')
@@ -784,11 +910,14 @@ if __name__ == '__main__':
     
     print("🚀 Starting ShikshaSetu Application...")
     print(f"📍 Access the application at: http://localhost:{port}")
-    print("🔧 Running in production mode")
-    if EMAIL_CONFIGURED:
-        print("📧 Email service: ENABLED")
+    print(f"🔧 Environment: {'PRODUCTION' if IS_PRODUCTION else 'DEVELOPMENT'}")
+    
+    if USE_SENDGRID:
+        print("📧 Email service: SendGrid (Production)")
+    elif USE_SMTP:
+        print("📧 Email service: SMTP (Local Development)")
     else:
-        print("📧 Email service: DISABLED (using console fallback)")
+        print("📧 Email service: CONSOLE FALLBACK")
     
     # Run in production mode
     app.run(host='0.0.0.0', port=port, debug=False)
