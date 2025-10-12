@@ -1,4 +1,6 @@
 import sqlite3
+import psycopg2
+from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, send_from_directory, session, redirect, url_for, flash
 from database import DatabaseManager
 from models import create_user, get_user_by_username_or_email, verify_user_email, hash_password, init_auth_db, get_auth_db_connection
@@ -17,7 +19,7 @@ import sys
 import traceback
 import threading
 import time
-import requests  # Add this for SendGrid API
+import requests
 
 # Add better error handling
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -53,7 +55,14 @@ except Exception as e:
     traceback.print_exc()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')
+app.secret_key = os.getenv('SECRET_KEY', 'fallback-secret-key-for-development')
+
+# ✅ CRITICAL FIX: Session configuration for persistence
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)  # 1 week session
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+app.config['SESSION_COOKIE_SECURE'] = True  # For HTTPS in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Initialize components with error handling
 db_manager = DatabaseManager()
@@ -81,29 +90,123 @@ elif USE_SMTP:
 else:
     print("⚠️  Email service not configured - using console fallback")
 
-def init_auth_db():
-    """Initialize authentication database"""
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  username TEXT UNIQUE NOT NULL,
-                  email TEXT UNIQUE NOT NULL,
-                  password_hash TEXT,
-                  email_verified BOOLEAN DEFAULT FALSE,
-                  verification_token TEXT,
-                  token_expiry DATETIME,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-    
-    conn.commit()
-    conn.close()
-
+# ✅ CRITICAL FIX: Universal database connection function
 def get_auth_db_connection():
-    """Get connection to authentication database"""
+    """Get connection to authentication database (PostgreSQL on Render, SQLite locally)"""
+    database_url = os.environ.get('DATABASE_URL')
+    
+    # Handle Render's PostgreSQL URL
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    if database_url and database_url.startswith('postgresql://'):
+        try:
+            # PostgreSQL connection (Render Production)
+            result = urlparse(database_url)
+            conn = psycopg2.connect(
+                database=result.path[1:],
+                user=result.username,
+                password=result.password,
+                host=result.hostname,
+                port=result.port
+            )
+            print("✅ Connected to PostgreSQL database")
+            return conn
+        except Exception as e:
+            print(f"❌ PostgreSQL connection failed: {e}, falling back to SQLite")
+            # Fallback to SQLite
+            return get_sqlite_connection()
+    else:
+        # SQLite connection (Local Development)
+        return get_sqlite_connection()
+
+def get_sqlite_connection():
+    """Get SQLite connection for development"""
     conn = sqlite3.connect('users.db')
     conn.row_factory = sqlite3.Row
     return conn
+
+def get_main_db_connection():
+    """Get connection for main documents database"""
+    database_url = os.environ.get('DATABASE_URL')
+    
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    if database_url and database_url.startswith('postgresql://'):
+        try:
+            # PostgreSQL for main database
+            result = urlparse(database_url)
+            conn = psycopg2.connect(
+                database=result.path[1:],
+                user=result.username,
+                password=result.password,
+                host=result.hostname,
+                port=result.port
+            )
+            return conn
+        except Exception as e:
+            print(f"❌ PostgreSQL connection error: {e}")
+            return sqlite3.connect('shiksha_setu.db')
+    else:
+        # SQLite for development
+        return sqlite3.connect('shiksha_setu.db')
+
+
+
+# ✅ CRITICAL FIX: Universal database execution helper
+def execute_db_query(query, params=(), fetchone=False, fetchall=False, commit=False):
+    """Execute database queries that work with both SQLite and PostgreSQL"""
+    conn = get_auth_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        # Convert SQLite ? placeholders to PostgreSQL %s if needed
+        if hasattr(conn, 'cursor') and not isinstance(conn, sqlite3.Connection):
+            # PostgreSQL - convert ? to %s
+            query = query.replace('?', '%s')
+        
+        cursor.execute(query, params)
+        
+        result = None
+        if fetchone:
+            row = cursor.fetchone()
+            if row:
+                if hasattr(cursor, 'description'):
+                    # PostgreSQL - convert to dict
+                    columns = [desc[0] for desc in cursor.description]
+                    result = dict(zip(columns, row))
+                else:
+                    # SQLite - already a dict due to row_factory
+                    result = row
+        elif fetchall:
+            rows = cursor.fetchall()
+            if hasattr(cursor, 'description'):
+                # PostgreSQL - convert to list of dicts
+                columns = [desc[0] for desc in cursor.description]
+                result = [dict(zip(columns, row)) for row in rows]
+            else:
+                # SQLite - already dicts
+                result = rows
+        
+        if commit:
+            conn.commit()
+            if fetchone and 'RETURNING id' in query.upper():
+                # Get the inserted ID for PostgreSQL
+                if hasattr(conn, 'cursor'):
+                    returning_result = cursor.fetchone()
+                    if returning_result:
+                        result = returning_result[0] if isinstance(returning_result, (list, tuple)) else returning_result
+        
+        return result
+        
+    except Exception as e:
+        print(f"❌ Database query error: {e}")
+        if hasattr(conn, 'rollback'):
+            conn.rollback()
+        raise e
+    finally:
+        conn.close()
 
 def _display_verification_code_console(email, verification_code):
     """Display verification code in console"""
@@ -176,7 +279,7 @@ def send_verification_email_sendgrid(email, verification_code):
                                     <p>3. Complete your registration</p>
                                 </div>
                                 
-                                <p><strong>⏰ This code will expire in 24 hours.</strong></p>
+                                <p><strong>⏰ This code will expire in 15 minutes.</strong></p>
                                 <p>If you didn't create an account with ShikshaSetu, please ignore this email.</p>
                             </div>
                             
@@ -250,7 +353,7 @@ def send_verification_email_smtp(email, verification_code):
                         <p>3. Complete your registration</p>
                     </div>
                     
-                    <p><strong>⏰ This code will expire in 24 hours.</strong></p>
+                    <p><strong>⏰ This code will expire in 15 minutes.</strong></p>
                     <p>If you didn't create an account with ShikshaSetu, please ignore this email.</p>
                 </div>
                 
@@ -278,7 +381,7 @@ def send_verification_email_smtp(email, verification_code):
         2. Enter the code above
         3. Complete your registration
         
-        This code will expire in 24 hours.
+        This code will expire in 15 minutes.
         
         If you didn't create an account with ShikshaSetu, please ignore this email.
         
@@ -445,10 +548,11 @@ except Exception as e:
     print(f"Initialization traceback: {traceback.format_exc()}")
     documents = []
 
-# Authentication Routes
+# ✅ CRITICAL FIX: Updated Authentication Routes with PostgreSQL support
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration page"""
+    """User registration page - PostgreSQL compatible"""
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
         
@@ -472,18 +576,17 @@ def register():
             return render_template('register.html', username=username, email=email)
         
         # Check if user already exists
-        conn = get_auth_db_connection()
-        existing_user = conn.execute(
+        existing_user = execute_db_query(
             'SELECT * FROM users WHERE username = ? OR email = ?', 
-            (username, email)
-        ).fetchone()
+            (username, email), 
+            fetchone=True
+        )
         
         if existing_user:
             if existing_user['username'] == username:
                 flash('Username already exists', 'error')
             else:
                 flash('Email already exists', 'error')
-            conn.close()
             return render_template('register.html', username=username, email=email)
         
         # Generate simpler verification code (6-digit number)
@@ -494,20 +597,30 @@ def register():
         
         # Store user data (without password yet)
         try:
-            conn.execute(
-                'INSERT INTO users (username, email, verification_token, token_expiry) VALUES (?, ?, ?, ?)',
-                (username, email, verification_code, token_expiry)
+            # Use the universal database function
+            user_id = execute_db_query(
+                'INSERT INTO users (username, email, verification_token, token_expiry) VALUES (?, ?, ?, ?) RETURNING id',
+                (username, email, verification_code, token_expiry),
+                fetchone=True,
+                commit=True
             )
-            conn.commit()
-            user_id = conn.execute('SELECT last_insert_rowid()').fetchone()[0]
-            conn.close()
             
-            print(f"User stored in database with ID: {user_id}")
+            if user_id:
+                if isinstance(user_id, dict) and 'id' in user_id:
+                    user_id = user_id['id']
+                print(f"User stored in database with ID: {user_id}")
+            else:
+                # Fallback for SQLite
+                conn = get_auth_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT last_insert_rowid()')
+                user_id = cursor.fetchone()[0]
+                conn.close()
+                print(f"User stored in SQLite with ID: {user_id}")
             
         except Exception as db_error:
             print(f"Database error: {db_error}")
             flash('Error creating user account. Please try again.', 'error')
-            conn.close()
             return render_template('register.html', username=username, email=email)
         
         # Send verification email using async method
@@ -541,21 +654,19 @@ def verify_email(token=None):
     
     if request.method == 'GET' and token:
         # Handle direct link verification
-        conn = get_auth_db_connection()
-        user = conn.execute(
+        user = execute_db_query(
             'SELECT * FROM users WHERE verification_token = ? AND token_expiry > ?',
-            (token, datetime.now())
-        ).fetchone()
+            (token, datetime.now()),
+            fetchone=True
+        )
         
         if user:
             session['verified_user'] = user['id']
             session['verified_email'] = user['email']
-            conn.close()
             flash('Email verified successfully! Please create your password.', 'success')
             return redirect(url_for('create_password'))
         else:
             flash('Invalid or expired verification link', 'error')
-            conn.close()
             return redirect(url_for('register'))
     
     if request.method == 'POST':
@@ -583,13 +694,11 @@ def verify_email(token=None):
             session['verified_email'] = session.get('pending_email')
             
             # Update database
-            conn = get_auth_db_connection()
-            conn.execute(
+            execute_db_query(
                 'UPDATE users SET email_verified = TRUE WHERE id = ?',
-                (user_id,)
+                (user_id,),
+                commit=True
             )
-            conn.commit()
-            conn.close()
             
             # Clear pending session data
             session.pop('pending_user_id', None)
@@ -634,24 +743,27 @@ def create_password():
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         
         # Update user with password
-        conn = get_auth_db_connection()
         try:
-            conn.execute(
+            execute_db_query(
                 'UPDATE users SET password_hash = ?, email_verified = TRUE WHERE id = ?',
-                (password_hash, session['verified_user'])
+                (password_hash, session['verified_user']),
+                commit=True
             )
-            conn.commit()
             
             # Get user info for session
-            user = conn.execute('SELECT * FROM users WHERE id = ?', (session['verified_user'],)).fetchone()
-            conn.close()
+            user = execute_db_query(
+                'SELECT * FROM users WHERE id = ?',
+                (session['verified_user'],),
+                fetchone=True
+            )
             
             if user:
-                # Clear session and log user in
+                # ✅ CRITICAL FIX: Make session permanent and clear old session
                 session.clear()
                 session['user_id'] = user['id']
                 session['username'] = user['username']
                 session['email'] = user['email']
+                session.permanent = True  # This makes the session last 7 days
                 
                 flash('Account created successfully! Welcome to ShikshaSetu.', 'success')
                 return redirect(url_for('dashboard'))
@@ -662,14 +774,14 @@ def create_password():
         except Exception as e:
             print(f"Password creation error: {e}")
             flash('Error creating account. Please try again.', 'error')
-            conn.close()
             return redirect(url_for('register'))
     
     return render_template('create_password.html')
 
+# ✅ CRITICAL FIX: Updated login with session persistence
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login page"""
+    """User login page with persistent sessions"""
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
         
@@ -683,17 +795,19 @@ def login():
         
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         
-        conn = get_auth_db_connection()
-        user = conn.execute(
+        user = execute_db_query(
             'SELECT * FROM users WHERE (username = ? OR email = ?) AND password_hash = ? AND email_verified = TRUE',
-            (username_or_email, username_or_email, password_hash)
-        ).fetchone()
-        conn.close()
+            (username_or_email, username_or_email, password_hash),
+            fetchone=True
+        )
         
         if user:
+            # ✅ CRITICAL FIX: Set permanent session
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['email'] = user['email']
+            session.permanent = True  # This makes the session persist for 7 days
+            
             flash('Login successful!', 'success')
             
             # Redirect to intended page or dashboard
@@ -726,7 +840,25 @@ def dashboard():
     
     return render_template('dashboard.html', user=user_data)
 
-# Existing Application Routes
+# Debug routes to check database status
+@app.route('/debug/users')
+def debug_users():
+    """Debug route to check all users in database"""
+    users = execute_db_query('SELECT id, username, email, email_verified, created_at FROM users', fetchall=True)
+    return jsonify({
+        'total_users': len(users) if users else 0,
+        'users': users or []
+    })
+
+@app.route('/debug/database-type')
+def debug_database_type():
+    """Check which database is being used"""
+    conn = get_auth_db_connection()
+    db_type = "PostgreSQL" if hasattr(conn, 'cursor') and not isinstance(conn, sqlite3.Connection) else "SQLite"
+    conn.close()
+    return jsonify({'database_type': db_type})
+
+# Existing Application Routes (keep all your existing routes below exactly as they are)
 @app.route('/')
 def home():
     """Home page with welcome message"""
@@ -847,16 +979,29 @@ def document_detail(document_id):
         
     try:
         # Get the specific document
-        conn = sqlite3.connect('shiksha_setu.db')
+        conn = get_main_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM documents WHERE id = ?", (document_id,))
+        
+        if hasattr(conn, 'cursor') and not isinstance(conn, sqlite3.Connection):
+            # PostgreSQL
+            cursor.execute("SELECT * FROM documents WHERE id = %s", (document_id,))
+        else:
+            # SQLite
+            cursor.execute("SELECT * FROM documents WHERE id = ?", (document_id,))
+            
         document_data = cursor.fetchone()
         conn.close()
         
         if document_data:
             # Convert to dictionary
-            columns = ['id', 'title', 'content', 'document_type', 'category', 'department', 'created_date', 'keywords', 'document_url']
-            document = dict(zip(columns, document_data))
+            if hasattr(cursor, 'description'):
+                # PostgreSQL
+                columns = [desc[0] for desc in cursor.description]
+                document = dict(zip(columns, document_data))
+            else:
+                # SQLite
+                columns = ['id', 'title', 'content', 'document_type', 'category', 'department', 'created_date', 'keywords', 'document_url']
+                document = dict(zip(columns, document_data))
             return render_template('document_detail.html', document=document)
         else:
             return "Document not found", 404
@@ -871,15 +1016,24 @@ def get_document_api(document_id):
         return jsonify({'success': False, 'error': 'Authentication required'}), 401
         
     try:
-        conn = sqlite3.connect('shiksha_setu.db')
+        conn = get_main_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM documents WHERE id = ?", (document_id,))
+        
+        if hasattr(conn, 'cursor') and not isinstance(conn, sqlite3.Connection):
+            cursor.execute("SELECT * FROM documents WHERE id = %s", (document_id,))
+        else:
+            cursor.execute("SELECT * FROM documents WHERE id = ?", (document_id,))
+            
         document_data = cursor.fetchone()
         conn.close()
         
         if document_data:
-            columns = ['id', 'title', 'content', 'document_type', 'category', 'department', 'created_date', 'keywords', 'document_url']
-            document = dict(zip(columns, document_data))
+            if hasattr(cursor, 'description'):
+                columns = [desc[0] for desc in cursor.description]
+                document = dict(zip(columns, document_data))
+            else:
+                columns = ['id', 'title', 'content', 'document_type', 'category', 'department', 'created_date', 'keywords', 'document_url']
+                document = dict(zip(columns, document_data))
             return jsonify({'success': True, 'document': document})
         else:
             return jsonify({'success': False, 'error': 'Document not found'}), 404
